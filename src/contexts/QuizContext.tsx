@@ -1,14 +1,6 @@
-import React, { createContext, useContext, useReducer, useCallback, useEffect, useRef } from 'react';
-import { io, Socket } from 'socket.io-client';
+import React, { createContext, useContext, useReducer, useEffect } from 'react';
+import { io } from 'socket.io-client';
 import { toast } from 'react-hot-toast';
-
-interface Question {
-  id: number;
-  question: string;
-  answer: string;
-  media?: { type: string; src: string };
-  used: boolean;
-}
 
 interface Team {
   id: number;
@@ -17,46 +9,66 @@ interface Team {
   color: string;
 }
 
+interface Question {
+  id: number;
+  question: string;
+  answer: string;
+  used: boolean;
+  media?: { type: string; src: string };
+}
+
 interface QuizState {
-  currentRound: 'general' | 'av' | 'rapid-fire';
+  currentRound: string;
   currentQuestion: Question | null;
+  currentTeamId: number | null;
+  timerSeconds: number;
+  isTimerRunning: boolean;
+  isPassed: boolean;
   showAnswer: boolean;
   showCongratulations: boolean;
   showQuestion: boolean;
   teams: Team[];
   generalQuestions: Question[];
   avQuestions: Question[];
+  extraQuestions: Question[];
   version: number;
 }
 
-interface QuizContextType {
-  state: QuizState;
-  updateQuizState: (type: string, payload: any) => Promise<void>;
-  refreshState: () => Promise<void>;
-}
-
-const QuizContext = createContext<QuizContextType | undefined>(undefined);
+type Action =
+  | { type: 'LOAD_STATE'; payload: QuizState }
+  | { type: 'UPDATE_STATE'; payload: Partial<QuizState> };
 
 const initialState: QuizState = {
   currentRound: 'general',
   currentQuestion: null,
+  currentTeamId: null,
+  timerSeconds: 0,
+  isTimerRunning: false,
+  isPassed: false,
   showAnswer: false,
   showCongratulations: false,
   showQuestion: false,
   teams: [],
   generalQuestions: [],
   avQuestions: [],
+  extraQuestions: [],
   version: 0
 };
 
-type Action =
-  | { type: 'LOAD_STATE'; payload: QuizState }
-  | { type: 'UPDATE_STATE'; payload: Partial<QuizState> };
+const QuizContext = createContext<{
+  state: QuizState;
+  updateQuizState: (type: string, payload: any) => Promise<void>;
+  refreshState: () => Promise<void>;
+}>({
+  state: initialState,
+  updateQuizState: async () => {},
+  refreshState: async () => {}
+});
 
-const reducer = (state: QuizState, action: Action): QuizState => {
+const quizReducer = (state: QuizState, action: Action): QuizState => {
   switch (action.type) {
     case 'LOAD_STATE':
-      return { ...state, ...action.payload };
+      return action.payload;
     case 'UPDATE_STATE':
       return { ...state, ...action.payload };
     default:
@@ -65,21 +77,45 @@ const reducer = (state: QuizState, action: Action): QuizState => {
 };
 
 export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [state, dispatch] = useReducer(reducer, initialState);
-  const socketRef = useRef<Socket | null>(null);
+  const [state, dispatch] = useReducer(quizReducer, initialState);
 
-  const refreshState = useCallback(async () => {
-    try {
-      const response = await fetch('http://localhost:3001/api/quiz-state');
-      const data = await response.json();
+  useEffect(() => {
+    const socket = io('http://localhost:3001');
+
+    socket.on('connect', () => {
+      console.log('Connected to WebSocket');
+      refreshState();
+    });
+
+    socket.on('quiz-state-update', (data: QuizState) => {
       dispatch({ type: 'LOAD_STATE', payload: data });
-    } catch (error) {
-      console.error('Error fetching quiz state:', error);
-      toast.error('Failed to fetch quiz state');
-    }
+    });
+
+    socket.on('connect_error', (error) => {
+      console.error('WebSocket connection error:', error);
+      toast.error('Failed to connect to server');
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, []);
 
-  const updateQuizState = useCallback(async (type: string, payload: any) => {
+  const refreshState = async () => {
+    try {
+      const response = await fetch('http://localhost:3001/api/quiz-state');
+      if (!response.ok) {
+        throw new Error('Failed to fetch quiz state');
+      }
+      const data: QuizState = await response.json();
+      dispatch({ type: 'LOAD_STATE', payload: data });
+    } catch (error) {
+      console.error('Error refreshing state:', error);
+      toast.error('Failed to refresh quiz state');
+    }
+  };
+
+  const updateQuizState = async (type: string, payload: any) => {
     try {
       const response = await fetch('http://localhost:3001/api/quiz-state', {
         method: 'POST',
@@ -92,24 +128,8 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       console.error('Error updating quiz state:', error);
       toast.error('Failed to update quiz state');
-      throw error;
     }
-  }, []);
-
-  useEffect(() => {
-    const socket = io('http://localhost:3001');
-    socketRef.current = socket;
-
-    socket.on('quiz-state-update', (data: QuizState) => {
-      dispatch({ type: 'LOAD_STATE', payload: data });
-    });
-
-    refreshState();
-
-    return () => {
-      socket.disconnect();
-    };
-  }, [refreshState]);
+  };
 
   return (
     <QuizContext.Provider value={{ state, updateQuizState, refreshState }}>
@@ -118,10 +138,4 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
-export const useQuiz = () => {
-  const context = useContext(QuizContext);
-  if (!context) {
-    throw new Error('useQuiz must be used within a QuizProvider');
-  }
-  return context;
-};
+export const useQuiz = () => useContext(QuizContext);
