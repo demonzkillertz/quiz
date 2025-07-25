@@ -1,5 +1,11 @@
 import { createPool } from 'mysql2/promise';
 import { config } from 'dotenv';
+import { readFile, writeFile } from 'fs/promises';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 config();
 
@@ -20,7 +26,36 @@ async function initializeDatabase() {
   try {
     connection = await pool.getConnection();
     console.log('Initializing database');
-    
+
+    // Check if configuration has changed
+    const configFilePath = join(__dirname, 'dbConfig.json');
+    let previousConfig = {};
+    try {
+      previousConfig = JSON.parse(await readFile(configFilePath, 'utf8'));
+    } catch (error) {
+      console.log('No previous config found, proceeding with initialization');
+    }
+
+    const currentConfig = {
+      host: dbConfig.host,
+      user: dbConfig.user,
+      password: dbConfig.password,
+      database: dbConfig.database
+    };
+
+    const configChanged = JSON.stringify(currentConfig) !== JSON.stringify(previousConfig);
+
+    // Check if tables exist
+    const [tables] = await connection.execute(
+      "SHOW TABLES LIKE 'quiz_state'"
+    );
+    const tablesExist = tables.length > 0;
+
+    if (!configChanged && tablesExist) {
+      console.log('Database configuration unchanged and tables exist, skipping initialization');
+      return;
+    }
+
     // Drop tables to ensure clean state
     console.log('Dropping existing tables');
     await connection.execute('DROP TABLE IF EXISTS teams');
@@ -52,7 +87,7 @@ async function initializeDatabase() {
       )
     `);
 
-    // Create quiz_state table with new columns
+    // Create quiz_state table with new column
     console.log('Creating quiz_state table');
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS quiz_state (
@@ -66,6 +101,7 @@ async function initializeDatabase() {
         show_answer BOOLEAN DEFAULT FALSE,
         show_congratulations BOOLEAN DEFAULT FALSE,
         show_question BOOLEAN DEFAULT FALSE,
+        show_question_text BOOLEAN DEFAULT FALSE,
         version INT DEFAULT 0
       )
     `);
@@ -75,11 +111,11 @@ async function initializeDatabase() {
     const [teams] = await connection.execute('SELECT COUNT(*) as count FROM teams');
     if (teams[0].count === 0) {
       const defaultTeams = [
-        { id: 1, name: 'Architecture', score: 0, color: 'bg-red-500' },
-        { id: 2, name: 'Civil AB', score: 0, color: 'bg-blue-500' },
-        { id: 3, name: 'Civil CD', score: 0, color: 'bg-green-500' },
-        { id: 4, name: 'Computer', score: 0, color: 'bg-yellow-500' },
-        { id: 5, name: 'Electronics', score: 0, color: 'bg-purple-500' },
+        { id: 1, name: 'Group A', score: 0, color: 'bg-red-500' },
+        { id: 2, name: 'Group B', score: 0, color: 'bg-blue-500' },
+        { id: 3, name: 'Group C', score: 0, color: 'bg-green-500' },
+        { id: 4, name: 'Group D', score: 0, color: 'bg-yellow-500' },
+        { id: 5, name: 'Group E', score: 0, color: 'bg-purple-500' },
       ];
 
       for (const team of defaultTeams) {
@@ -96,10 +132,14 @@ async function initializeDatabase() {
     const [state] = await connection.execute('SELECT COUNT(*) as count FROM quiz_state');
     if (state[0].count === 0) {
       await connection.execute(
-        'INSERT INTO quiz_state (id, current_round, current_question_id, current_team_id, timer_seconds, is_timer_running, is_passed, show_answer, show_congratulations, show_question, version) VALUES (1, "general", NULL, NULL, 0, FALSE, FALSE, FALSE, FALSE, FALSE, 0)'
+        'INSERT INTO quiz_state (id, current_round, current_question_id, current_team_id, timer_seconds, is_timer_running, is_passed, show_answer, show_congratulations, show_question, show_question_text, version) VALUES (1, "general", NULL, NULL, 0, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, 0)'
       );
       console.log('Default quiz_state inserted');
     }
+
+    // Save current configuration
+    await writeFile(configFilePath, JSON.stringify(currentConfig));
+    console.log('Database configuration saved to dbConfig.json');
 
     console.log('Database initialized successfully');
   } catch (error) {

@@ -67,8 +67,28 @@ async function startTimerLoop() {
             used: q.used
           }));
 
-        const avQuestions = questions
-          .filter(q => q.round_type === 'av')
+        const audioQuestions = questions
+          .filter(q => q.round_type === 'audio')
+          .map(q => ({
+            id: q.id,
+            question: q.question,
+            answer: q.answer,
+            media: q.media_type ? { type: q.media_type, src: q.media_src } : undefined,
+            used: q.used
+          }));
+
+        const imageQuestions = questions
+          .filter(q => q.round_type === 'image')
+          .map(q => ({
+            id: q.id,
+            question: q.question,
+            answer: q.answer,
+            media: q.media_type ? { type: q.media_type, src: q.media_src } : undefined,
+            used: q.used
+          }));
+
+        const videoQuestions = questions
+          .filter(q => q.round_type === 'video')
           .map(q => ({
             id: q.id,
             question: q.question,
@@ -97,18 +117,26 @@ async function startTimerLoop() {
           showAnswer: updatedState[0]?.show_answer || false,
           showCongratulations: updatedState[0]?.show_congratulations || false,
           showQuestion: updatedState[0]?.show_question || false,
+          showQuestionText: updatedState[0]?.show_question_text || false,
           teams,
           generalQuestions,
-          avQuestions,
+          audioQuestions,
+          imageQuestions,
+          videoQuestions,
           extraQuestions,
           version: updatedState[0]?.version || 0
         };
 
         io.emit('quiz-state-update', quizState);
+
+        if (updatedState[0]?.timer_seconds === 1) {
+          io.emit('timer-end', { message: 'Timer ended' });
+        }
       } else if (state[0]?.timer_seconds <= 0) {
         await connection.execute('UPDATE quiz_state SET is_timer_running = FALSE WHERE id = 1');
         clearInterval(timerInterval);
         timerInterval = null;
+        io.emit('timer-end', { message: 'Timer ended' });
       }
     } catch (error) {
       console.error('Error in timer loop:', error);
@@ -130,8 +158,14 @@ async function syncQuestionsFromJSON(version = null) {
     const generalQuestions = JSON.parse(
       await readFile(join(__dirname, '../src/data/generalQuestions.json'), 'utf8')
     );
-    const avQuestions = JSON.parse(
-      await readFile(join(__dirname, '../src/data/avQuestions.json'), 'utf8')
+    const audioQuestions = JSON.parse(
+      await readFile(join(__dirname, '../src/data/audioQuestions.json'), 'utf8')
+    );
+    const imageQuestions = JSON.parse(
+      await readFile(join(__dirname, '../src/data/imageQuestions.json'), 'utf8')
+    );
+    const videoQuestions = JSON.parse(
+      await readFile(join(__dirname, '../src/data/videoQuestions.json'), 'utf8')
     );
     const extraQuestions = JSON.parse(
       await readFile(join(__dirname, '../src/data/extraQuestions.json'), 'utf8')
@@ -147,7 +181,9 @@ async function syncQuestionsFromJSON(version = null) {
 
     // Clear existing questions for each round type
     await connection.execute('DELETE FROM questions WHERE round_type = ?', ['general']);
-    await connection.execute('DELETE FROM questions WHERE round_type = ?', ['av']);
+    await connection.execute('DELETE FROM questions WHERE round_type = ?', ['audio']);
+    await connection.execute('DELETE FROM questions WHERE round_type = ?', ['image']);
+    await connection.execute('DELETE FROM questions WHERE round_type = ?', ['video']);
     await connection.execute('DELETE FROM questions WHERE round_type = ?', ['extra']);
 
     // Insert general questions
@@ -158,11 +194,27 @@ async function syncQuestionsFromJSON(version = null) {
       );
     }
 
-    // Insert AV questions
-    for (const q of avQuestions) {
+    // Insert audio questions
+    for (const q of audioQuestions) {
       await connection.execute(
         'INSERT INTO questions (id, question, answer, round_type, media_type, media_src, used) VALUES (?, ?, ?, ?, ?, ?, FALSE)',
-        [q.id, q.question, q.answer, 'av', q.media?.type || null, q.media?.src || null]
+        [q.id, q.question, q.answer, 'audio', q.media?.type || null, q.media?.src || null]
+      );
+    }
+
+    // Insert image questions
+    for (const q of imageQuestions) {
+      await connection.execute(
+        'INSERT INTO questions (id, question, answer, round_type, media_type, media_src, used) VALUES (?, ?, ?, ?, ?, ?, FALSE)',
+        [q.id, q.question, q.answer, 'image', q.media?.type || null, q.media?.src || null]
+      );
+    }
+
+    // Insert video questions
+    for (const q of videoQuestions) {
+      await connection.execute(
+        'INSERT INTO questions (id, question, answer, round_type, media_type, media_src, used) VALUES (?, ?, ?, ?, ?, ?, FALSE)',
+        [q.id, q.question, q.answer, 'video', q.media?.type || null, q.media?.src || null]
       );
     }
 
@@ -236,8 +288,28 @@ app.get('/api/quiz-state', async (req, res) => {
         used: q.used
       }));
 
-    const avQuestions = questions
-      .filter(q => q.round_type === 'av')
+    const audioQuestions = questions
+      .filter(q => q.round_type === 'audio')
+      .map(q => ({
+        id: q.id,
+        question: q.question,
+        answer: q.answer,
+        media: q.media_type ? { type: q.media_type, src: q.media_src } : undefined,
+        used: q.used
+      }));
+
+    const imageQuestions = questions
+      .filter(q => q.round_type === 'image')
+      .map(q => ({
+        id: q.id,
+        question: q.question,
+        answer: q.answer,
+        media: q.media_type ? { type: q.media_type, src: q.media_src } : undefined,
+        used: q.used
+      }));
+
+    const videoQuestions = questions
+      .filter(q => q.round_type === 'video')
       .map(q => ({
         id: q.id,
         question: q.question,
@@ -266,9 +338,12 @@ app.get('/api/quiz-state', async (req, res) => {
       showAnswer: state[0]?.show_answer || false,
       showCongratulations: state[0]?.show_congratulations || false,
       showQuestion: state[0]?.show_question || false,
+      showQuestionText: state[0]?.show_question_text || false,
       teams,
       generalQuestions,
-      avQuestions,
+      audioQuestions,
+      imageQuestions,
+      videoQuestions,
       extraQuestions,
       version: state[0]?.version || 0
     };
@@ -294,11 +369,11 @@ app.post('/api/quiz-state', async (req, res) => {
 
     switch (type) {
       case 'SET_ROUND':
-        if (!['general', 'av', 'rapid-fire', 'extra'].includes(payload)) {
+        if (!['general', 'audio', 'image', 'video', 'rapid-fire', 'extra', 'banner', 'rule', 'organizer'].includes(payload)) {
           throw new Error('Invalid round type');
         }
         await connection.execute(
-          'UPDATE quiz_state SET current_round = ?, current_question_id = NULL, current_team_id = NULL, timer_seconds = 0, is_timer_running = FALSE, is_passed = FALSE, show_answer = FALSE, show_congratulations = FALSE, show_question = FALSE WHERE id = 1',
+          'UPDATE quiz_state SET current_round = ?, current_question_id = NULL, current_team_id = NULL, timer_seconds = 0, is_timer_running = FALSE, is_passed = FALSE, show_answer = FALSE, show_congratulations = FALSE, show_question = FALSE, show_question_text = FALSE WHERE id = 1',
           [payload]
         );
         if (timerInterval) {
@@ -309,10 +384,10 @@ app.post('/api/quiz-state', async (req, res) => {
 
       case 'SET_CURRENT_QUESTION':
         await connection.execute(
-          'UPDATE quiz_state SET current_question_id = ?, current_team_id = ?, timer_seconds = ?, is_timer_running = FALSE, is_passed = FALSE, show_answer = FALSE, show_congratulations = FALSE, show_question = TRUE WHERE id = 1',
-          [payload?.id || null, payload?.teamId || null, payload?.isPassed ? 15 : 30]
+          'UPDATE quiz_state SET current_question_id = ?, current_team_id = ?, timer_seconds = ?, is_timer_running = FALSE, is_passed = FALSE, show_answer = FALSE, show_congratulations = FALSE, show_question = TRUE, show_question_text = ? WHERE id = 1',
+          [payload?.id || null, payload?.teamId || null, payload?.timerSeconds || (payload?.isPassed ? 15 : 30), payload?.media_type === 'text' ? true : false]
         );
-        if (payload?.id) {
+        if (payload?.id && !payload?.isPassed) {
           await connection.execute(
             'UPDATE questions SET used = TRUE WHERE id = ?',
             [payload.id]
@@ -352,7 +427,7 @@ app.post('/api/quiz-state', async (req, res) => {
       case 'RESET_TIMER':
         await connection.execute(
           'UPDATE quiz_state SET timer_seconds = ?, is_timer_running = FALSE WHERE id = 1',
-          [state[0]?.current_round === 'rapid-fire' ? 60 : state[0]?.is_passed ? 15 : 30]
+          [payload?.seconds || (state[0]?.current_round === 'rapid-fire' ? 60 : state[0]?.is_passed ? 15 : 30)]
         );
         if (timerInterval) {
           clearInterval(timerInterval);
@@ -362,12 +437,19 @@ app.post('/api/quiz-state', async (req, res) => {
 
       case 'PASS_QUESTION':
         await connection.execute(
-          'UPDATE quiz_state SET is_passed = TRUE, timer_seconds = 15, is_timer_running = FALSE WHERE id = 1'
+          'UPDATE quiz_state SET is_passed = TRUE, timer_seconds = 15, is_timer_running = FALSE, current_team_id = NULL WHERE id = 1'
         );
         if (timerInterval) {
           clearInterval(timerInterval);
           timerInterval = null;
         }
+        break;
+
+      case 'SHOW_QUESTION_TEXT':
+        await connection.execute(
+          'UPDATE quiz_state SET show_question_text = ? WHERE id = 1',
+          [payload]
+        );
         break;
 
       case 'SHOW_ANSWER':
@@ -409,7 +491,7 @@ app.post('/api/quiz-state', async (req, res) => {
         await connection.execute('UPDATE teams SET score = 0');
         await connection.execute('UPDATE questions SET used = FALSE');
         await connection.execute(
-          'UPDATE quiz_state SET current_round = "general", current_question_id = NULL, current_team_id = NULL, timer_seconds = 0, is_timer_running = FALSE, is_passed = FALSE, show_answer = FALSE, show_congratulations = FALSE, show_question = FALSE WHERE id = 1'
+          'UPDATE quiz_state SET current_round = "general", current_question_id = NULL, current_team_id = NULL, timer_seconds = 0, is_timer_running = FALSE, is_passed = FALSE, show_answer = FALSE, show_congratulations = FALSE, show_question = FALSE, show_question_text = FALSE WHERE id = 1'
         );
         if (timerInterval) {
           clearInterval(timerInterval);
@@ -455,8 +537,28 @@ app.post('/api/quiz-state', async (req, res) => {
         used: q.used
       }));
 
-    const avQuestions = questions
-      .filter(q => q.round_type === 'av')
+    const audioQuestions = questions
+      .filter(q => q.round_type === 'audio')
+      .map(q => ({
+        id: q.id,
+        question: q.question,
+        answer: q.answer,
+        media: q.media_type ? { type: q.media_type, src: q.media_src } : undefined,
+        used: q.used
+      }));
+
+    const imageQuestions = questions
+      .filter(q => q.round_type === 'image')
+      .map(q => ({
+        id: q.id,
+        question: q.question,
+        answer: q.answer,
+        media: q.media_type ? { type: q.media_type, src: q.media_src } : undefined,
+        used: q.used
+      }));
+
+    const videoQuestions = questions
+      .filter(q => q.round_type === 'video')
       .map(q => ({
         id: q.id,
         question: q.question,
@@ -485,9 +587,12 @@ app.post('/api/quiz-state', async (req, res) => {
       showAnswer: state[0]?.show_answer || false,
       showCongratulations: state[0]?.show_congratulations || false,
       showQuestion: state[0]?.show_question || false,
+      showQuestionText: state[0]?.show_question_text || false,
       teams,
       generalQuestions,
-      avQuestions,
+      audioQuestions,
+      imageQuestions,
+      videoQuestions,
       extraQuestions,
       version: state[0]?.version || 0
     };
@@ -545,8 +650,28 @@ app.post('/api/sync-questions', async (req, res) => {
         used: q.used
       }));
 
-    const avQuestions = questions
-      .filter(q => q.round_type === 'av')
+    const audioQuestions = questions
+      .filter(q => q.round_type === 'audio')
+      .map(q => ({
+        id: q.id,
+        question: q.question,
+        answer: q.answer,
+        media: q.media_type ? { type: q.media_type, src: q.media_src } : undefined,
+        used: q.used
+      }));
+
+    const imageQuestions = questions
+      .filter(q => q.round_type === 'image')
+      .map(q => ({
+        id: q.id,
+        question: q.question,
+        answer: q.answer,
+        media: q.media_type ? { type: q.media_type, src: q.media_src } : undefined,
+        used: q.used
+      }));
+
+    const videoQuestions = questions
+      .filter(q => q.round_type === 'video')
       .map(q => ({
         id: q.id,
         question: q.question,
@@ -575,9 +700,12 @@ app.post('/api/sync-questions', async (req, res) => {
       showAnswer: state[0]?.show_answer || false,
       showCongratulations: state[0]?.show_congratulations || false,
       showQuestion: state[0]?.show_question || false,
+      showQuestionText: state[0]?.show_question_text || false,
       teams,
       generalQuestions,
-      avQuestions,
+      audioQuestions,
+      imageQuestions,
+      videoQuestions,
       extraQuestions,
       version: state[0]?.version || 0
     };
@@ -623,7 +751,7 @@ app.post('/api/clear-and-reinitialize', async (req, res) => {
     if (stateCheck[0].count === 0) {
       console.log('Inserting default quiz_state');
       await connection.execute(
-        'INSERT INTO quiz_state (id, current_round, current_question_id, current_team_id, timer_seconds, is_timer_running, is_passed, show_answer, show_congratulations, show_question, version) VALUES (1, "general", NULL, NULL, 0, FALSE, FALSE, FALSE, FALSE, FALSE, 0)'
+        'INSERT INTO quiz_state (id, current_round, current_question_id, current_team_id, timer_seconds, is_timer_running, is_passed, show_answer, show_congratulations, show_question, show_question_text, version) VALUES (1, "general", NULL, NULL, 0, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, 0)'
       );
     }
 
@@ -643,9 +771,12 @@ app.post('/api/clear-and-reinitialize', async (req, res) => {
       showAnswer: state[0]?.show_answer || false,
       showCongratulations: state[0]?.show_congratulations || false,
       showQuestion: state[0]?.show_question || false,
+      showQuestionText: state[0]?.show_question_text || false,
       teams,
       generalQuestions: [],
-      avQuestions: [],
+      audioQuestions: [],
+      imageQuestions: [],
+      videoQuestions: [],
       extraQuestions: [],
       version: state[0]?.version || 0
     };

@@ -1,252 +1,127 @@
 [
   {
     "id": 1,
-    "question": "What is the capital of France?",
-    "answer": "Paris"
+    "question": "What is the total budget of Nepal for the Fiscal Year 2081/82?",
+    "answer": "19 Kharba,64 Arba, 11 Karod"
   },
   {
     "id": 2,
-    "question": "Who wrote 'Romeo and Juliet'?",
-    "answer": "William Shakespeare"
+    "question": "How many parts, articles and schedules are there in Nepal’s constitution 2072?",
+    "answer": "35 parts, 308 articles and 98 schedules"
   },
   {
     "id": 3,
-    "question": "What is the largest planet in our solar system?",
-    "answer": "Jupiter"
+    "question": "What is the full from of SIM as used in Mobile phone?",
+    "answer": "Subscriber identification modules"
   },
   {
     "id": 4,
-    "question": "In which year did World War II end?",
-    "answer": "1945"
+    "question": "What is the height of Kanchanjunga Himal, the second highest Himalaya of Nepal? Say the height in meters.",
+    "answer": "8586m"
   },
   {
     "id": 5,
-    "question": "What is the chemical symbol for gold?",
-    "answer": "Au"
+    "question": "Name the lone survivor of the Saurya Airlines crash of July 24, 2024 that occurred during take-off at the TIA airport, killing 18 people on board.",
+    "answer": "Captain Manish Ratna Shakya"
   },
   {
     "id": 6,
-    "question": "Who painted the Mona Lisa?",
-    "answer": "Leonardo da Vinci"
+    "question": "नेपालमा रहेका ७५३ वटा स्थानीय तहमा कुल वडा संख्या कति छ ?",
+    "answer": "6743 वटा वडा"
   },
   {
     "id": 7,
-    "question": "What is the smallest country in the world?",
-    "answer": "Vatican City"
+    "question": "बौद्ध धर्मका चार धाम भनेर कुन कुन ठाउँलाई चिनिन्छ ?",
+    "answer": "लुम्बिनी, बोध गया, सारनाथ, कुशीनगर"
   },
   {
     "id": 8,
-    "question": "Which gas makes up about 78% of Earth's atmosphere?",
-    "answer": "Nitrogen"
+    "question": "सार्वजनिक ५ पटक विश्वकप फुटबल जित्ने राष्ट्र, ब्राजिलले सो उपाधि कुन कुन वर्षहरुमा जितेको थियो ?",
+    "answer": "सन् 1958, 1962, 1970, 1994, 2002"
   },
   {
     "id": 9,
-    "question": "What is the currency of Japan?",
-    "answer": "Yen"
+    "question": "प्रसिद्ध ग्रन्थ महाभारत अनुसार महाभारत युद्धमा धृतराष्ट्रका पुत्र कौरवहरु मध्ये बाँचेका एक मात्र पुत्र को थिए ?",
+    "answer": "युयुत्सु"
   },
   {
     "id": 10,
-    "question": "Who composed 'The Four Seasons'?",
-    "answer": "Antonio Vivaldi"
+    "question": "What is the mass in grams of one cubic centimeter of water?",
+    "answer": "1gm"
   },
   {
     "id": 11,
-    "question": "What is the hardest natural substance on Earth?",
-    "answer": "Diamond"
+    "question": "One trillion is 1 followed by 12 Zeros, what is 1 followed by 18 zeros?",
+    "answer": "One quintillion"
   },
   {
     "id": 12,
-    "question": "In which continent is the Sahara Desert located?",
-    "answer": "Africa"
+    "question": "विश्व खुशि सुचकांक 2025 मा नेपालको स्थान कति रहेको छ ?",
+    "answer": "121 औं स्थान"
   },
   {
     "id": 13,
-    "question": "What is the speed of light in vacuum?",
-    "answer": "299,792,458 meters per second"
+    "question": "भ्वाइस अफ नेपाल सिजन ६को बिजेता को हुन् ?",
+    "answer": "प्रोसेस पाण्डे"
   },
   {
     "id": 14,
-    "question": "Who developed the theory of relativity?",
-    "answer": "Albert Einstein"
+    "question": "विश्वका सबैभन्दा अग्लो स्थानमा रहेका झरना कुन हो र यो कुन देशमा  रहेको छ ?",
+    "answer": "एन्जल , भेनेजुएला"
   },
   {
     "id": 15,
-    "question": "What is the largest ocean on Earth?",
-    "answer": "Pacific Ocean"
+    "question": "त्रिभुवन विश्वविद्यालयका वर्तमान उपकुलपति को हुन्?",
+    "answer": "प्रा.डा. दीपक अर्याल"
   },
   {
     "id": 16,
-    "question": "Which element has the atomic number 1?",
-    "answer": "Hydrogen"
+    "question": "Credit Crunch भन्नाले के बुझिन्छ ?",
+    "answer": "वित्तीय प्रणालीमा लगानिमा योग्य पूँजीको अभाव"
   },
   {
     "id": 17,
-    "question": "What is the capital of Australia?",
-    "answer": "Canberra"
+    "question": "प्रसिद्ध Hyundai motor company कुन देशको उत्पादन् हो ?",
+    "answer": "South Korea"
   },
   {
     "id": 18,
-    "question": "Who wrote '1984'?",
-    "answer": "George Orwell"
+    "question": "Who won the madan puraskar in the year 2080 BS and what is the title of book?",
+    "answer": "Mohan Mainali, Mukam Ranamaidan"
   },
   {
     "id": 19,
-    "question": "What is the formula for water?",
-    "answer": "H2O"
+    "question": "In which municipality is the Dailekh petroleum site located?",
+    "answer": "Bhairavi Rural municipality"
   },
   {
     "id": 20,
-    "question": "Which planet is known as the Red Planet?",
-    "answer": "Mars"
+    "question": "Which Nepali climber ascended all 14 peaks above 8000 meters within 8 months?",
+    "answer": "Kami Sherpa"
   },
   {
     "id": 21,
-    "question": "What is the longest river in the world?",
-    "answer": "Nile River"
+    "question": "Which goal is known as the Hand of God? Say the name of match, scorer and opponent team",
+    "answer": "1986 worldcup quarter final, Diego Maradona, England"
   },
   {
     "id": 22,
-    "question": "Who invented the telephone?",
-    "answer": "Alexander Graham Bell"
+    "question": "What was the name of the operation of Israel latest attack on Iran?",
+    "answer": "Operation Rising Lion"
   },
   {
     "id": 23,
-    "question": "What is the largest mammal in the world?",
-    "answer": "Blue Whale"
+    "question": "Name the director of the famous documentary “Honey Hunters of Nepal”",
+    "answer": "Eric Valli"
   },
   {
     "id": 24,
-    "question": "In which year was the internet invented?",
-    "answer": "1969 (ARPANET)"
+    "question": "Which is the first highway of Nepal?",
+    "answer": "Tribhuvan Rajpath"
   },
   {
     "id": 25,
-    "question": "What is the boiling point of water at sea level?",
-    "answer": "100°C or 212°F"
-  },
-  {
-    "id": 26,
-    "question": "Who painted 'The Starry Night'?",
-    "answer": "Vincent van Gogh"
-  },
-  {
-    "id": 27,
-    "question": "What is the currency of the United Kingdom?",
-    "answer": "Pound Sterling"
-  },
-  {
-    "id": 28,
-    "question": "Which organ in the human body produces insulin?",
-    "answer": "Pancreas"
-  },
-  {
-    "id": 29,
-    "question": "What is the tallest mountain in the world?",
-    "answer": "Mount Everest"
-  },
-  {
-    "id": 30,
-    "question": "Who wrote 'Pride and Prejudice'?",
-    "answer": "Jane Austen"
-  },
-  {
-    "id": 31,
-    "question": "What is the smallest unit of matter?",
-    "answer": "Atom"
-  },
-  {
-    "id": 32,
-    "question": "Which country gifted the Statue of Liberty to the USA?",
-    "answer": "France"
-  },
-  {
-    "id": 33,
-    "question": "What is the chemical formula for table salt?",
-    "answer": "NaCl"
-  },
-  {
-    "id": 34,
-    "question": "Who was the first person to walk on the moon?",
-    "answer": "Neil Armstrong"
-  },
-  {
-    "id": 35,
-    "question": "What is the largest desert in the world?",
-    "answer": "Antarctica"
-  },
-  {
-    "id": 36,
-    "question": "Which programming language was created by Guido van Rossum?",
-    "answer": "Python"
-  },
-  {
-    "id": 37,
-    "question": "What is the freezing point of water?",
-    "answer": "0°C or 32°F"
-  },
-  {
-    "id": 38,
-    "question": "Who composed 'Symphony No. 9'?",
-    "answer": "Ludwig van Beethoven"
-  },
-  {
-    "id": 39,
-    "question": "What is the most abundant gas in Earth's atmosphere?",
-    "answer": "Nitrogen"
-  },
-  {
-    "id": 40,
-    "question": "Which company was founded by Bill Gates and Paul Allen?",
-    "answer": "Microsoft"
-  },
-  {
-    "id": 41,
-    "question": "What is the smallest unit of matter?",
-    "answer": "Atom"
-  },
-  {
-    "id": 42,
-    "question": "Which country gifted the Statue of Liberty to the USA?",
-    "answer": "France"
-  },
-  {
-    "id": 43,
-    "question": "What is the chemical formula for table salt?",
-    "answer": "NaCl"
-  },
-  {
-    "id": 44,
-    "question": "Who was the first person to walk on the moon?",
-    "answer": "Neil Armstrong"
-  },
-  {
-    "id": 45,
-    "question": "What is the largest desert in the world?",
-    "answer": "Antarctica"
-  },
-  {
-    "id": 46,
-    "question": "Which programming language was created by Guido van Rossum?",
-    "answer": "Python"
-  },
-  {
-    "id": 47,
-    "question": "What is the freezing point of water?",
-    "answer": "0°C or 32°F"
-  },
-  {
-    "id": 48,
-    "question": "Who composed 'Symphony No. 9'?",
-    "answer": "Ludwig van Beethoven"
-  },
-  {
-    "id": 49,
-    "question": "What is the most abundant gas in Earth's atmosphere?",
-    "answer": "Nitrogen"
-  },
-  {
-    "id": 50,
-    "question": "Which company was founded by Bill Gates and Paul Allen?",
-    "answer": "Microsoft"
+    "question": "What was the name of the first computer virus?",
+    "answer": "Creeper"
   }
 ]

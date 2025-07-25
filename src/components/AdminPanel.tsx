@@ -1,31 +1,39 @@
 import React, { useState, useCallback } from 'react';
 import { useQuiz } from '../contexts/QuizContext';
-import { Play, Eye, Trophy, RotateCcw, RefreshCw, Database, Trash2, Clock, Pause, RotateCw, FastForward } from 'lucide-react';
+import { Play, Eye, Trophy, RotateCcw, RefreshCw, Database, Trash2, Clock, Pause, RotateCw, FastForward, Text } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 export const getRoundStats = (state: any) => {
   const generalUsed = state.generalQuestions.filter(q => q.used).length;
   const generalTotal = state.generalQuestions.length;
-  const avUsed = state.avQuestions.filter(q => q.used).length;
-  const avTotal = state.avQuestions.length;
+  const audioUsed = state.audioQuestions.filter(q => q.used).length;
+  const audioTotal = state.audioQuestions.length;
+  const imageUsed = state.imageQuestions.filter(q => q.used).length;
+  const imageTotal = state.imageQuestions.length;
+  const videoUsed = state.videoQuestions.filter(q => q.used).length;
+  const videoTotal = state.videoQuestions.length;
   const extraUsed = state.extraQuestions.filter(q => q.used).length;
   const extraTotal = state.extraQuestions.length;
   return {
     generalUsed,
     generalTotal,
-    avUsed,
-    avTotal,
+    audioUsed,
+    audioTotal,
+    imageUsed,
+    imageTotal,
+    videoUsed,
+    videoTotal,
     extraUsed,
     extraTotal,
-    totalUsed: generalUsed + avUsed + extraUsed,
-    totalQuestions: generalTotal + avTotal + extraTotal
+    totalUsed: generalUsed + audioUsed + imageUsed + videoUsed + extraUsed,
+    totalQuestions: generalTotal + audioTotal + imageTotal + videoTotal + extraTotal
   };
 };
 
 const AdminPanel: React.FC = () => {
   const { state, updateQuizState, refreshState } = useQuiz();
   const [selectedQuestionId, setSelectedQuestionId] = useState<string>('');
-  const [selectedTeamId, setSelectedTeamId] = useState<string>('');
+  const [timerDuration, setTimerDuration] = useState<string>('30');
   const [isResetting, setIsResetting] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
@@ -36,8 +44,12 @@ const AdminPanel: React.FC = () => {
 
   const currentQuestions = state.currentRound === 'general'
     ? state.generalQuestions
-    : state.currentRound === 'av'
-    ? state.avQuestions
+    : state.currentRound === 'audio'
+    ? state.audioQuestions
+    : state.currentRound === 'image'
+    ? state.imageQuestions
+    : state.currentRound === 'video'
+    ? state.videoQuestions
     : state.currentRound === 'extra'
     ? state.extraQuestions
     : [];
@@ -46,21 +58,26 @@ const AdminPanel: React.FC = () => {
 
   const handleQuestionSelect = useCallback(async () => {
     const questionId = parseInt(selectedQuestionId);
-    const teamId = state.currentRound === 'general' ? parseInt(selectedTeamId) || null : null;
     const question = currentQuestions.find(q => q.id === questionId);
     if (question) {
-      await updateQuizState('SET_CURRENT_QUESTION', { id: question.id, teamId, isPassed: false });
+      const mediaType = question.media ? question.media.type : 'text';
+      await updateQuizState('SET_CURRENT_QUESTION', {
+        id: question.id,
+        teamId: state.currentTeamId,
+        timerSeconds: parseInt(timerDuration) || (state.isPassed ? 15 : 30),
+        media_type: mediaType
+      });
       setSelectedQuestionId('');
-      setSelectedTeamId('');
       toast.success('Question selected!');
     }
-  }, [selectedQuestionId, selectedTeamId, currentQuestions, state.currentRound, updateQuizState]);
+  }, [selectedQuestionId, currentQuestions, state.currentTeamId, state.isPassed, timerDuration, updateQuizState]);
 
-  const handleTeamSelect = useCallback(async () => {
-    const teamId = parseInt(selectedTeamId) || null;
-    await updateQuizState('SET_CURRENT_TEAM', { teamId });
-    toast.success(`Team ${state.teams.find(t => t.id === teamId)?.name || 'None'} selected!`);
-  }, [selectedTeamId, updateQuizState, state.teams]);
+  const handleTeamSelect = useCallback(async (teamId: number | null, isAudience: boolean = false) => {
+    const effectiveTeamId = isAudience ? 999 : teamId;
+    await updateQuizState('SET_CURRENT_TEAM', { teamId: effectiveTeamId });
+    const teamName = isAudience ? 'Audience' : teamId ? state.teams.find(t => t.id === teamId)?.name : 'None';
+    toast.success(`Team ${teamName} selected!`);
+  }, [updateQuizState, state.teams]);
 
   const handleScoreUpdate = useCallback(async (teamId: number, newScore: number) => {
     await updateQuizState('UPDATE_TEAM_SCORE', { teamId, score: newScore });
@@ -141,10 +158,10 @@ const AdminPanel: React.FC = () => {
   }, [refreshState, state.teams]);
 
   const startTimer = useCallback(async () => {
-    const seconds = state.currentRound === 'rapid-fire' ? 60 : state.isPassed ? 15 : 30;
+    const seconds = state.currentRound === 'rapid-fire' ? 60 : parseInt(timerDuration) || (state.isPassed ? 15 : 30);
     await updateQuizState('START_TIMER', { seconds });
     toast.success('Timer started!');
-  }, [updateQuizState, state.currentRound, state.isPassed]);
+  }, [updateQuizState, state.currentRound, state.isPassed, timerDuration]);
 
   const stopTimer = useCallback(async () => {
     await updateQuizState('STOP_TIMER', null);
@@ -152,14 +169,19 @@ const AdminPanel: React.FC = () => {
   }, [updateQuizState]);
 
   const resetTimer = useCallback(async () => {
-    await updateQuizState('RESET_TIMER', null);
+    await updateQuizState('RESET_TIMER', { seconds: parseInt(timerDuration) || (state.currentRound === 'rapid-fire' ? 60 : state.isPassed ? 15 : 30) });
     toast.success('Timer reset!');
-  }, [updateQuizState]);
+  }, [updateQuizState, state.currentRound, state.isPassed, timerDuration]);
 
   const passQuestion = useCallback(async () => {
     await updateQuizState('PASS_QUESTION', null);
     toast.success('Question passed! Timer set to 15 seconds.');
   }, [updateQuizState]);
+
+  const showQuestionText = useCallback(async () => {
+    await updateQuizState('SHOW_QUESTION_TEXT', !state.showQuestionText);
+    toast.success(state.showQuestionText ? 'Question text hidden!' : 'Question text shown!');
+  }, [updateQuizState, state.showQuestionText]);
 
   const stats = getRoundStats(state);
 
@@ -181,9 +203,7 @@ const AdminPanel: React.FC = () => {
             <button
               onClick={resetQuiz}
               disabled={isResetting}
-              className="flex items-center gap-2 px-4 py-2
-
- bg-red-600 hover:bg-red-700 disabled:bg-gray-600 rounded-lg transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 rounded-lg transition-colors"
             >
               <RotateCcw size={20} />
               {isResetting ? 'Resetting...' : 'Reset Quiz'}
@@ -206,11 +226,19 @@ const AdminPanel: React.FC = () => {
             <p className="text-2xl font-bold">{stats.generalUsed}/{stats.generalTotal} Questions Used</p>
           </div>
           <div className="bg-gray-800 p-4 rounded-xl">
-            <h3 className="text-lg font-semibold text-purple-400 mb-2">AV Round</h3>
-            <p className="text-2xl font-bold">{stats.avUsed}/{stats.avTotal} Questions Used</p>
+            <h3 className="text-lg font-semibold text-purple-400 mb-2">Audio Round</h3>
+            <p className="text-2xl font-bold">{stats.audioUsed}/{stats.audioTotal} Questions Used</p>
           </div>
           <div className="bg-gray-800 p-4 rounded-xl">
-            <h3 className="text-lg font-semibold text-yellow-400 mb-2">Extra Round</h3>
+            <h3 className="text-lg font-semibold text-yellow-400 mb-2">Image Round</h3>
+            <p className="text-2xl font-bold">{stats.imageUsed}/{stats.imageTotal} Questions Used</p>
+          </div>
+          <div className="bg-gray-800 p-4 rounded-xl">
+            <h3 className="text-lg font-semibold text-green-400 mb-2">Video Round</h3>
+            <p className="text-2xl font-bold">{stats.videoUsed}/{stats.videoTotal} Questions Used</p>
+          </div>
+          <div className="bg-gray-800 p-4 rounded-xl">
+            <h3 className="text-lg font-semibold text-orange-400 mb-2">Extra Round</h3>
             <p className="text-2xl font-bold">{stats.extraUsed}/{stats.extraTotal} Questions Used</p>
           </div>
         </div>
@@ -229,9 +257,14 @@ const AdminPanel: React.FC = () => {
                 className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500"
               >
                 <option value="general">General Round ({stats.generalTotal} questions)</option>
-                <option value="av">Audio-Visual Round ({stats.avTotal} questions)</option>
+                <option value="audio">Audio Round ({stats.audioTotal} questions)</option>
+                <option value="image">Image Round ({stats.imageTotal} questions)</option>
+                <option value="video">Video Round ({stats.videoTotal} questions)</option>
                 <option value="extra">Extra Round ({stats.extraTotal} questions)</option>
-                <option value="rapid-fire">Rapid-Fire Round</option>
+                <option value="rapid-fire">Rapid-Fire Round (Manual)</option>
+                <option value="banner">Banner Page</option>
+                <option value="rule">Rules Page</option>
+                <option value="organizer">Organizer Info</option>
               </select>
             </div>
 
@@ -241,37 +274,39 @@ const AdminPanel: React.FC = () => {
                 <label className="block text-sm font-medium mb-2">
                   {state.currentRound === 'general' ? 'Current Team Turn' : 'Rapid-Fire Team'}
                 </label>
-                <div className="flex gap-3">
-                  <select
-                    value={selectedTeamId}
-                    onChange={(e) => setSelectedTeamId(e.target.value)}
-                    className="flex-1 p-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Select a team...</option>
-                    {state.teams.map(team => (
-                      <option key={team.id} value={team.id}>
-                        {team.name}
-                      </option>
-                    ))}
-                  </select>
+                <div className="flex flex-wrap gap-3">
+                  {state.teams.map(team => (
+                    <button
+                      key={team.id}
+                      onClick={() => handleTeamSelect(team.id)}
+                      className={`px-4 py-2 rounded-lg transition-colors ${state.currentTeamId === team.id ? 'bg-blue-700' : 'bg-blue-600 hover:bg-blue-700'}`}
+                    >
+                      {team.name}
+                    </button>
+                  ))}
                   <button
-                    onClick={handleTeamSelect}
-                    disabled={!selectedTeamId}
-                    className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg transition-colors"
+                    onClick={() => handleTeamSelect(null, true)}
+                    className={`px-4 py-2 rounded-lg transition-colors ${state.currentTeamId === 999 ? 'bg-purple-700' : 'bg-purple-600 hover:bg-purple-700'}`}
                   >
-                    Set Team
+                    Audience
+                  </button>
+                  <button
+                    onClick={() => handleTeamSelect(null)}
+                    className={`px-4 py-2 rounded-lg transition-colors ${state.currentTeamId === null ? 'bg-gray-700' : 'bg-gray-600 hover:bg-gray-700'}`}
+                  >
+                    None
                   </button>
                 </div>
                 {state.currentTeamId && (
                   <p className="mt-2 text-sm text-gray-300">
-                    Current Team: {state.teams.find(t => t.id === state.currentTeamId)?.name}
+                    Current Team: {state.currentTeamId === 999 ? 'Audience' : state.teams.find(t => t.id === state.currentTeamId)?.name}
                   </p>
                 )}
               </div>
             )}
 
             {/* Question Selection */}
-            {state.currentRound !== 'rapid-fire' && (
+            {!['rapid-fire', 'banner', 'rule', 'organizer'].includes(state.currentRound) && (
               <div className="mb-6">
                 <label className="block text-sm font-medium mb-2">
                   Available Questions ({availableQuestions.length} remaining)
@@ -291,7 +326,7 @@ const AdminPanel: React.FC = () => {
                   </select>
                   <button
                     onClick={handleQuestionSelect}
-                    disabled={!selectedQuestionId || (state.currentRound === 'general' && !selectedTeamId)}
+                    disabled={!selectedQuestionId || (state.currentRound === 'general' && !state.currentTeamId)}
                     className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg transition-colors flex items-center gap-2"
                   >
                     <Play size={20} />
@@ -304,6 +339,16 @@ const AdminPanel: React.FC = () => {
             {/* Timer Controls */}
             {(state.currentQuestion || state.currentRound === 'rapid-fire') && (
               <div className="mb-6 p-4 bg-gray-700 rounded-lg">
+                <div className="flex items-center gap-3 mb-3">
+                  <label className="text-sm font-medium">Timer Duration (seconds):</label>
+                  <input
+                    type="number"
+                    value={timerDuration}
+                    onChange={(e) => setTimerDuration(e.target.value)}
+                    className="w-20 p-2 bg-gray-600 border border-gray-500 rounded focus:ring-2 focus:ring-blue-500 text-white"
+                    min="1"
+                  />
+                </div>
                 <p className="text-sm text-gray-300 mb-2">
                   Timer: {state.timerSeconds} seconds {state.isPassed ? '(Passed)' : ''}
                 </p>
@@ -334,8 +379,7 @@ const AdminPanel: React.FC = () => {
                   {state.currentRound !== 'rapid-fire' && state.currentQuestion && (
                     <button
                       onClick={passQuestion}
-                      disabled={state.isPassed}
-                      className="px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-600 rounded-lg transition-colors flex items-center gap-2"
+                      className="px-4 py-2 bg-orange-600 hover:bg-orange-700 rounded-lg transition-colors flex items-center gap-2"
                     >
                       <FastForward size={18} />
                       Pass
@@ -351,11 +395,11 @@ const AdminPanel: React.FC = () => {
                 <p className="text-sm text-gray-300 mb-2">
                   Current Question #{state.currentQuestion.id} {state.isPassed ? '(Passed)' : ''}
                   {state.currentRound === 'general' && state.currentTeamId
-                    ? ` - Team: ${state.teams.find(t => t.id === state.currentTeamId)?.name}`
+                    ? ` - Team: ${state.currentTeamId === 999 ? 'Audience' : state.teams.find(t => t.id === state.currentTeamId)?.name}`
                     : ''}
                 </p>
                 <p className="text-lg mb-4">{state.currentQuestion.question}</p>
-                <div className="flex gap-3">
+                <div className="flex gap-3 flex-wrap">
                   <button
                     onClick={() => updateQuizState('SHOW_QUESTION', !state.showQuestion)}
                     className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors flex items-center gap-2"
@@ -363,6 +407,15 @@ const AdminPanel: React.FC = () => {
                     <Eye size={18} />
                     {state.showQuestion ? 'Hide Question' : 'Show Question'}
                   </button>
+                  {(state.currentRound === 'audio' || state.currentRound === 'video' || (state.currentRound === 'extra' && state.currentQuestion.media && ['audio', 'video'].includes(state.currentQuestion.media.type))) && (
+                    <button
+                      onClick={showQuestionText}
+                      className="px-4 py-2 bg-teal-600 hover:bg-teal-700 rounded-lg transition-colors flex items-center gap-2"
+                    >
+                      <Text size={18} />
+                      {state.showQuestionText ? 'Hide Question Text' : 'Show Question Text'}
+                    </button>
+                  )}
                   <button
                     onClick={() => updateQuizState('SHOW_ANSWER', !state.showAnswer)}
                     className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg transition-colors flex items-center gap-2"
@@ -415,10 +468,14 @@ const AdminPanel: React.FC = () => {
         </div>
 
         {/* Question Grid */}
-        {state.currentRound !== 'rapid-fire' && (
+        {!['rapid-fire', 'banner', 'rule', 'organizer'].includes(state.currentRound) && (
           <div className="mt-8 bg-gray-800 p-6 rounded-xl">
             <h2 className="text-2xl font-semibold mb-4 text-green-400">
-              {state.currentRound === 'general' ? 'General' : state.currentRound === 'av' ? 'Audio-Visual' : 'Extra'} Questions Status
+              {state.currentRound === 'general' ? 'General' :
+               state.currentRound === 'audio' ? 'Audio' :
+               state.currentRound === 'image' ? 'Image' :
+               state.currentRound === 'video' ? 'Video' :
+               'Extra'} Questions Status
             </h2>
             <div className="grid grid-cols-8 gap-2">
               {currentQuestions.map(question => (

@@ -27,9 +27,12 @@ interface QuizState {
   showAnswer: boolean;
   showCongratulations: boolean;
   showQuestion: boolean;
+  showQuestionText: boolean;
   teams: Team[];
   generalQuestions: Question[];
-  avQuestions: Question[];
+  audioQuestions: Question[];
+  imageQuestions: Question[];
+  videoQuestions: Question[];
   extraQuestions: Question[];
   version: number;
 }
@@ -48,9 +51,12 @@ const initialState: QuizState = {
   showAnswer: false,
   showCongratulations: false,
   showQuestion: false,
+  showQuestionText: false,
   teams: [],
   generalQuestions: [],
-  avQuestions: [],
+  audioQuestions: [],
+  imageQuestions: [],
+  videoQuestions: [],
   extraQuestions: [],
   version: 0
 };
@@ -89,6 +95,11 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     socket.on('quiz-state-update', (data: QuizState) => {
       dispatch({ type: 'LOAD_STATE', payload: data });
+    });
+
+    socket.on('timer-end', () => {
+      const audio = new Audio('/media/timer-end.mp3');
+      audio.play().catch(error => console.error('Error playing timer end sound:', error));
     });
 
     socket.on('connect_error', (error) => {
